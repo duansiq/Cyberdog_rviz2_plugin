@@ -19,6 +19,11 @@
 #include <QLabel>
 #include <QTimer>
 #include <QPixmap>
+#include <QObject>
+#include <QApplication>
+#include <QMainWindow>
+#include <QPushButton>
+#include <QDebug>
 
 #include "interaction_msgs/action/audio_play.hpp"
 #include "interaction_msgs/srv/token_pass.hpp"
@@ -44,7 +49,8 @@ public:
 
   virtual void load( const rviz_common::Config& config );
   virtual void save( rviz_common::Config config ) const;
-  
+  void connectSignalsSlots();
+
 protected Q_SLOTS:
   void trigger_service(bool msg, std::string service_name);
   void set_dog_status(bool msg);
@@ -56,6 +62,8 @@ protected Q_SLOTS:
   void set_wav_id();
   void play_wav();
   void set_volume(int vol);
+  void onSubmit();
+  void onToggleSwitchClicked();
 
 protected:
   bool event(QEvent *event);
@@ -78,6 +86,7 @@ private:
   SwitchButton* dog_switch_button_;
   QPushButton* stand_up_button_;
   QPushButton* get_down_button_;
+  QPushButton* submit_button_;
   QLabel* label_;
   QLabel* height_label_;
   GaitComboBox* gait_list_;
@@ -85,6 +94,8 @@ private:
   QSlider* height_slider_;
   QLineEdit* wav_input_;
   QPushButton* play_button_;
+  QSlider* vol_slider = new QSlider(Qt::Horizontal);
+  bool allSignalsReceived;
   
   std::string srv_name_camera_ = "camera/enable";
   std::string dogs_namespace_ = "/mi123456789/";

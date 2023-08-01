@@ -49,7 +49,7 @@ MissionPanel::MissionPanel(QWidget* parent):rviz_common::Panel(parent)
   QLabel* void_label = new QLabel("🎵  Music:");
   wav_layout->addWidget(void_label);
 
-  QSlider* vol_slider = new QSlider(Qt::Horizontal);
+  // QSlider* vol_slider = new QSlider(Qt::Horizontal);
   vol_slider->setMinimum(0);
   vol_slider->setMaximum(10);
   vol_slider->setValue(5);
@@ -82,24 +82,87 @@ MissionPanel::MissionPanel(QWidget* parent):rviz_common::Panel(parent)
   teleop_layout->addLayout(height_layout);
   teleop_group_box->setLayout(teleop_layout);
   
+  //总开关
+  QHBoxLayout* submit_layout = new QHBoxLayout;
+  submit_button_ = new QPushButton("Submit");
+  submit_button_->setEnabled(true);
+  submit_layout->addWidget(submit_button_);
+
   //main layout
   layout->addLayout( mode_box_layout );
   layout->addLayout( gait_list_, Qt::AlignLeft);
   layout->addLayout( order_list_, Qt::AlignLeft);
   layout->addLayout( wav_layout );
   layout->addWidget( teleop_group_box );
+  layout->addLayout( submit_layout);
   setLayout( layout );
 
+  connectSignalsSlots();
+
+}
+
+void MissionPanel::connectSignalsSlots()
+{
   connect(dog_switch_button_, SIGNAL(valueChanged(bool) ), this, SLOT( set_dog_status(bool)));
   connect(gait_list_,SIGNAL(valueChanged(int)),SLOT(set_gait(int)));
-  connect(stand_up_button_, &QPushButton::clicked, [this](void) { set_mode(1); });
-  connect(get_down_button_, &QPushButton::clicked, [this](void) { set_mode(0); });
+  connect(stand_up_button_, &QPushButton::clicked, this,&MissionPanel::onToggleSwitchClicked);
+  connect(get_down_button_, &QPushButton::clicked, this,&MissionPanel::onToggleSwitchClicked);
   connect(height_slider_,SIGNAL(valueChanged(int)),SLOT(set_height(int)));
   connect(order_list_,SIGNAL(valueChanged(int)),SLOT(set_order_id(int)));
   connect(order_list_, &OrderComboBox::clicked, [this](void) { send_order(); });
   connect(wav_input_, SIGNAL(editingFinished()), this, SLOT( set_wav_id()) );
   connect(play_button_, &QPushButton::clicked, [this](void) { play_wav(); });
   connect(vol_slider, SIGNAL(valueChanged(int)), SLOT(set_volume(int)));
+  connect(submit_button_, &QPushButton::clicked, this, &MissionPanel::onSubmit);
+}
+
+void MissionPanel::onToggleSwitchClicked()
+      {
+        if (!allSignalsReceived)
+        {
+            qDebug() << "Signal received, but not executing yet.";
+            return;
+        }
+          // 切换按钮状态
+          QPushButton *button = qobject_cast<QPushButton *>(sender());
+          if (button)
+          {
+              button->setChecked(!button->isChecked());
+          }
+      }
+
+void MissionPanel::onSubmit()
+{
+  std::cout<<"onsubmit start"<<std::endl;
+  allSignalsReceived = submit_button_->isChecked();
+        qDebug() << "allSignalsReceived" << allSignalsReceived;
+
+
+  bool stand_up_button_st=stand_up_button_->isChecked();
+  bool get_down_button_st=get_down_button_->isChecked();
+
+  
+  qDebug() << "Stand Up: " << stand_up_button_st;
+  qDebug() << "get_down: " << get_down_button_;
+
+   if(!allSignalsReceived)
+   {
+      if(!stand_up_button_st)
+        {
+          set_mode(1);
+          std::cout<<"stand up"<<std::endl;
+        }
+        if(!get_down_button_st)
+        {
+          set_mode(0);
+          std::cout<<"get_down"<<std::endl;
+        }
+        qDebug() << "exe" << get_down_button_;
+   }
+    else
+            {
+                qDebug() << "Not all signals received.";
+            }
 }
 
 void MissionPanel::set_volume(int vol)
